@@ -22,44 +22,26 @@ services:
     depends_on:
       - kafka
         
-  rabbit:
-    image: "rabbitmq:latest"
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: "admin"
-      RABBITMQ_DEFAULT_PASS: "admin"
+  # rabbit:
+  #   image: "rabbitmq:latest"
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: "admin"
+  #     RABBITMQ_DEFAULT_PASS: "admin"
   
-  kafka:
-    image: docker.io/bitnami/kafka:3.6
-    user: root
-    ports:
-      - "9092:9092"
-    volumes:
-      - /kafka_data_internal2:/bitnami
-    environment:
-      # KRaft settings
-      - KAFKA_CFG_NODE_ID=0
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-      # Listeners
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-  
-  seq:
-    image: datalust/seq
-    container_name: seq
-    ports:
-      - "50505:80"
-    volumes:
-      - ./seq:/data
-    environment:
-      ACCEPT_EULA: "Y"
-      SEQ_API_CANONICALURI: "https://localhost:50505"
+
+  # seq:
+  #   image: datalust/seq
+  #   container_name: seq
+  #   ports:
+  #     - "50505:80"
+  #   volumes:
+  #     - ./seq:/data
+  #   environment:
+  #     ACCEPT_EULA: "Y"
+  #     SEQ_API_CANONICALURI: "https://localhost:50505"
     
   prometheus:
     image: prom/prometheus
@@ -76,15 +58,71 @@ services:
     ports:
       - "55055:9090"
   
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    user: root
-    volumes:
-      - ./grafana:/var/lib/grafana
-    environment:
-      GF_SERVER_ROOT_URL: http://localhost:3000
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   user: root
+  #   volumes:
+  #     - ./grafana:/var/lib/grafana
+  #   environment:
+  #     GF_SERVER_ROOT_URL: http://localhost:3000
+  #   ports:
+  #     - "50555:3000"
+  #   depends_on:
+  #     - prometheus
+
+
+  # kafka:
+  #   image: docker.io/bitnami/kafka:3.6
+  #   user: root
+  #   ports:
+  #     - "9092:9092"
+  #     - "9093:9093"
+  #   volumes:
+  #     - /kafka_data_internal2:/bitnami
+  #   environment:
+  #     # KRaft settings
+  #     - KAFKA_CFG_NODE_ID=0
+  #     - KAFKA_CFG_PROCESS_ROLES=controller,broker
+  #     - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+  #     # Listeners
+  #     - ALLOW_PLAINTEXT_LISTENER=YES
+  #     - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+  #     - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+  #     - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+  #     - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+  #     - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
     ports:
-      - "50555:3000"
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.1
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=LOCAL://:9093,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=LOCAL://:9093,EXTERNAL://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=LOCAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=LOCAL
     depends_on:
-      - prometheus
+      - zookeeper
+
+volumes:
+  db:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local

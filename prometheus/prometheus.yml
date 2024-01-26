@@ -1,12 +1,11 @@
 global:
-  scrape_interval: 10s
+  scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'consumer_job'
-    metrics_path: '/metrics'
-    static_configs:s
-      - targets: ['consumer-service:4000']
-  - job_name: 'producer_job'
-    metrics_path: '/metrics'
+  - job_name: 'Sender'
     static_configs:
-      - targets: ['producer-service:4000']
+      - targets: ['host.docker.internal:51111']
+
+  - job_name: 'Receiver'
+    static_configs:
+      - targets: ['host.docker.internal:52222']
